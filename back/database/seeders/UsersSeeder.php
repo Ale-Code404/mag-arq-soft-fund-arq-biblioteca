@@ -2,15 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Infrastructure\Persistence\Models\PersonModel;
-use App\Infrastructure\Persistence\Models\RoleModel;
-use App\Infrastructure\Persistence\Models\UserModel;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
+use App\Infrastructure\Persistence\Models\{
+    PersonModel,
+    RoleModel,
+    UserModel
+};
+
 class UsersSeeder extends Seeder
 {
-    public const PASSWORD = 'Cambiar123*';
+    public const PASSWORD = 'secret';
 
     private const USERS = [
         ['login' => 'admin', 'identification' => '900000001', 'name' => 'Administrador del sistema', 'position' => 'Administrator', 'role' => 'Administrator'],
