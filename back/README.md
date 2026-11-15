@@ -1,58 +1,89 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Backend: API de la Biblioteca UAN
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST en Laravel 13 y PHP 8.4, con PostgreSQL 16 y Redis 7, todo en Docker.
 
-## About Laravel
+## Arquitectura
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Monolito con tres capas en `src/` (espacio de nombres `App\`). Cada capa solo depende de las de abajo; una prueba de arquitectura lo verifica.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+src/
+├─ Domain/           PHP puro: entidades, reglas de negocio e interfaces de repositorio
+├─ Application/      un caso de uso por clase, con sus DTO, y los puertos (Transaction, Clock, caches)
+└─ Infrastructure/   Laravel: controladores, middleware, modelos y repositorios Eloquent, Redis
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+| Capa | Puede usar | No puede usar |
+|---|---|---|
+| Domain | nada | Laravel, Application, Infrastructure |
+| Application | Domain | Laravel, Infrastructure |
+| Infrastructure | Domain y Application | |
 
-## Contributing
+Las interfaces de repositorio viven en `Domain/Repositories` y las implementa Eloquent en `Infrastructure/Persistence/Repositories`. `Infrastructure/Providers/DomainServiceProvider` las enlaza.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Comandos
 
-## Code of Conduct
+| Acción | Comando |
+|---|---|
+| Levantar | `docker compose up -d` |
+| Recrear la base con datos demo | `docker compose exec app php artisan migrate:fresh --seed` |
+| Pruebas | `docker compose exec app ./vendor/bin/pest` |
+| Formato | `docker compose exec app ./vendor/bin/pint` |
+| Consola SQL | `docker compose exec db psql -U biblioteca -d biblioteca_uan` |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Las pruebas usan la base `biblioteca_uan_test`, que se crea sola la primera vez. En `APP_ENV=local` la semilla agrega 2 estanterías, 8 libros, 20 ejemplares, 3 lectores y un préstamo vencido.
 
-## Security Vulnerabilities
+## API
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Todas las rutas, salvo `health` y `auth/login`, piden `Authorization: Bearer <token>` y el permiso indicado.
 
-## License
+| Método y ruta | Caso de uso | Permiso |
+|---|---|---|
+| `GET /api/health` | Estado de DB y Redis | público |
+| `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me` | Sesión | público / autenticado |
+| `GET` `POST /api/shelves` | CU-01 Estanterías | `SHELF_MANAGE` |
+| `POST /api/books` | CU-02 Libro | `BOOK_REGISTER` |
+| `POST /api/books/{isbn}/copies` | CU-03 Ejemplar (y lo ubica) | `COPY_MANAGE` |
+| `PUT /api/copies/{code}/location` | CU-04 Reubicar ejemplar | `COPY_MANAGE` |
+| `GET /api/capacity?scope=total\|shelf\|genre&value=` | CU-05 Capacidad | `CAPACITY_VIEW` |
+| `POST /api/readers` | CU-06 Lector | `READER_REGISTER` |
+| `POST /api/loans` | CU-07 Préstamo | `LOAN_MANAGE` |
+| `POST /api/loans/{copyCode}/renewal` | CU-08 Renovación | `LOAN_MANAGE` |
+| `POST /api/returns` | CU-09 Devolución y multa | `LOAN_MANAGE` |
+| `POST /api/fines/{id}/payment` | CU-10 Pago de multa | `FINE_REGISTER_PAYMENT` |
+| `GET /api/readers/{identification}/history` | CU-11 Historial | `LOAN_VIEW` |
+| `GET` `POST /api/users` · `PUT /api/users/{id}` · `PUT /api/users/{id}/roles` | CU-12 Usuarios | `USER_MANAGE` |
+| `GET` `PUT /api/settings` | CU-13 Parámetros | `SETTINGS_UPDATE` |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Ejemplo:
+
+```http
+POST /api/loans
+{ "readerIdentification": "1020304050", "copyCode": "EJ-0002" }
+```
+
+Errores:
+
+| Caso | HTTP | Cuerpo |
+|---|---|---|
+| Regla de negocio | 422 | `{ "rule": "RN-03", "message": "El préstamo está vencido." }` |
+| Validación | 422 | `{ "message": "...", "errors": { "campo": ["..."] } }` |
+| No existe | 404 | `{ "message": "..." }` |
+| Sin token / sin permiso | 401 / 403 | `{ "message": "No autenticado." }` / `{ "message": "No autorizado." }` |
+
+## Reglas de negocio
+
+| Regla | Dónde |
+|---|---|
+| RN-01 Préstamo de 15 días | `Domain/Loans/Loan` |
+| RN-02 Una renovación de 15 días desde la primera entrega | `Loan::renew` |
+| RN-03 No se renueva un préstamo vencido ni con multas | `Loan::renew` |
+| RN-04 Multa fija por día de retraso | `Loan::returnCopy` con `FixedDailyRate` |
+| RN-05 Lector con multas no recibe préstamos | `Application/Loans/RegisterLoan` |
+| RN-06 Un ejemplar ocupa grosor + 0,4 cm | `Domain/Catalog/Copy` |
+| RN-07 El nivel admite el libro si cabe en alto y en largo | `Domain/Inventory/Level` |
+| RN-08 Código de ejemplar único | `Application/Inventory/RegisterCopy` |
+| RN-09 Un ejemplar prestado conserva su espacio | `Level::usedSpace` |
+| RN-10 Grosor promedio total y por temática | `Domain/Inventory/Library` |
+
+Los parámetros (días, multa diaria, holgura, grosor por defecto) se cambian en `PUT /api/settings`.

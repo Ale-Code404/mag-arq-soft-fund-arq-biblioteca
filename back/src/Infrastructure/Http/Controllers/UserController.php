@@ -4,14 +4,22 @@ namespace App\Infrastructure\Http\Controllers;
 
 use App\Application\Administration\Dto\ManageUsersInput;
 use App\Application\Administration\Dto\UserAction;
+use App\Application\Administration\ListUsers;
 use App\Application\Administration\ManageUsers;
+use App\Application\Shared\QueryInput;
 use App\Infrastructure\Http\Requests\AssignRolesRequest;
 use App\Infrastructure\Http\Requests\CreateUserRequest;
 use App\Infrastructure\Http\Requests\EditUserRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    public function index(Request $request, ListUsers $useCase): JsonResponse
+    {
+        return $this->respond($useCase->execute(new QueryInput($this->userId($request))));
+    }
+
     public function store(CreateUserRequest $request, ManageUsers $useCase): JsonResponse
     {
         return $this->respond($useCase->execute(new ManageUsersInput(

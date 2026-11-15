@@ -59,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // CU-12
     Route::middleware('permission:USER_MANAGE')->group(function () {
+        Route::get('users', [UserController::class, 'index']);
         Route::post('users', [UserController::class, 'store']);
         Route::put('users/{id}', [UserController::class, 'update'])->whereNumber('id');
         Route::put('users/{id}/roles', [UserController::class, 'roles'])->whereNumber('id');

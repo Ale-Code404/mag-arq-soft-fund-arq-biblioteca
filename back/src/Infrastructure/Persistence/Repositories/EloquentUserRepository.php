@@ -13,6 +13,13 @@ use App\Infrastructure\Persistence\Models\UserModel;
 
 class EloquentUserRepository implements UserRepository
 {
+    public function all(): array
+    {
+        return UserModel::with(['person', 'roles'])->orderBy('login')->get()
+            ->map(fn (UserModel $m) => $this->toDomain($m))
+            ->all();
+    }
+
     public function findById(int $id): ?User
     {
         $model = UserModel::with(['person', 'roles'])->find($id);

@@ -23,6 +23,9 @@
     <php>
         <!-- docker compose inyecta variables reales que ganan sobre .env.testing;
              se fuerzan aquí para que las pruebas nunca toquen la base principal -->
+        <!-- the tests never read the development config cache (it would point them at the main database) -->
+        <env name="APP_CONFIG_CACHE" value="bootstrap/cache/config.testing.php" force="true"/>
+        <server name="APP_CONFIG_CACHE" value="bootstrap/cache/config.testing.php"/>
         <env name="APP_ENV" value="testing" force="true"/>
         <server name="APP_ENV" value="testing"/>
         <env name="DB_CONNECTION" value="pgsql" force="true"/>

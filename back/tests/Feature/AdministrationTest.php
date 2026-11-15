@@ -10,6 +10,12 @@ $newUser = [
     'name' => 'Auxiliar de biblioteca', 'position' => 'Auxiliar', 'roles' => ['Director'],
 ];
 
+it('CU-12 lists users with their roles', function () {
+    $this->getJson('/api/users')->assertOk()->assertJsonCount(3)
+        ->assertJsonPath('0.login', 'admin')
+        ->assertJsonPath('0.roles', ['Administrator']);
+});
+
 it('CU-12 creates a user who can log in', function () use ($newUser) {
     $this->postJson('/api/users', $newUser)->assertCreated()->assertJson(['login' => 'auxiliar', 'active' => true, 'roles' => ['Director']]);
 
