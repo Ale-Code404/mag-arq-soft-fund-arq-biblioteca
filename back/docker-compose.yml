@@ -1,0 +1,50 @@
+name: biblioteca-uan
+
+services:
+  app:
+    build:
+      context: .
+      target: dev
+      args:
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+    container_name: app
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    container_name: db
+    environment:
+      POSTGRES_USER: biblioteca
+      POSTGRES_PASSWORD: biblioteca
+    ports:
+      - "${DB_PUERTO_HOST:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "${REDIS_PUERTO_HOST:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
