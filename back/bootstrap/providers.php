@@ -1,7 +1,7 @@
 <?php
 
-use App\Infraestructura\Proveedores\DominioServiceProvider;
+use App\Infrastructure\Providers\DomainServiceProvider;
 
 return [
-    DominioServiceProvider::class,
+    DomainServiceProvider::class,
 ];

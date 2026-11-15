@@ -1,7 +1,7 @@
 <?php
 
-use App\Infraestructura\Http\ManejadorErrores;
-use App\Infraestructura\Http\Middleware\VerificarPermiso;
+use App\Infrastructure\Http\ErrorHandler;
+use App\Infrastructure\Http\Middleware\CheckPermission;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,18 +15,18 @@ $app = Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['permiso' => VerificarPermiso::class]);
-        // API sin sesión: sin token se responde 401, nunca se redirige a una página de login
+        $middleware->alias(['permission' => CheckPermission::class]);
+        // Sessionless API: without a token respond 401, never redirect to a login page
         $middleware->redirectGuestsTo(fn (Request $request) => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
-        ManejadorErrores::registrar($exceptions);
+        ErrorHandler::register($exceptions);
     })->create();
 
-// Las capas (Dominio, Aplicacion, Infraestructura) viven en src/ con el espacio de nombres App\
+// The layers (Domain, Application, Infrastructure) live in src/ under the App\ namespace
 $app->useAppPath($app->basePath('src'));
 
 return $app;

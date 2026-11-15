@@ -1,10 +1,10 @@
 <?php
 
-use App\Dominio\Catalogo\Dimensiones;
-use App\Dominio\Catalogo\Ejemplar;
-use App\Dominio\Catalogo\Libro;
-use App\Dominio\Catalogo\Tematica;
-use App\Dominio\Configuracion\ConfiguracionBiblioteca;
+use App\Domain\Catalog\Book;
+use App\Domain\Catalog\Copy;
+use App\Domain\Catalog\Dimensions;
+use App\Domain\Catalog\Genre;
+use App\Domain\Settings\LibrarySettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -13,35 +13,35 @@ pest()->extend(TestCase::class)
     ->in('Feature');
 
 /*
-| Fábricas del dominio para las pruebas unitarias (sin Laravel ni base de datos).
+| Domain factories for unit tests (no Laravel, no database).
 */
 
-function configuracion(
-    int $diasPrestamo = 15,
-    int $diasRenovacion = 15,
-    int $maxRenovaciones = 1,
-    int $valorMultaDiaria = 1000,
-    float $holguraCm = 0.4,
-    float $grosorPorDefectoCm = 2.5,
-): ConfiguracionBiblioteca {
-    return new ConfiguracionBiblioteca($diasPrestamo, $diasRenovacion, $maxRenovaciones, $valorMultaDiaria, $holguraCm, $grosorPorDefectoCm);
+function settings(
+    int $loanDays = 15,
+    int $renewalDays = 15,
+    int $maxRenewals = 1,
+    int $dailyFineValue = 1000,
+    float $clearanceCm = 0.4,
+    float $defaultThicknessCm = 2.5,
+): LibrarySettings {
+    return new LibrarySettings($loanDays, $renewalDays, $maxRenewals, $dailyFineValue, $clearanceCm, $defaultThicknessCm);
 }
 
-function libro(
-    float $grosorCm = 3.0,
-    float $altoCm = 23.0,
-    Tematica $tematica = Tematica::NARRATIVA,
+function book(
+    float $thicknessCm = 3.0,
+    float $heightCm = 23.0,
+    Genre $genre = Genre::NARRATIVE,
     string $isbn = '9789580000001',
-): Libro {
-    return new Libro($isbn, 'Cien años de soledad', 'Gabriel García Márquez', 'Sudamericana', 1967, $tematica, new Dimensiones($altoCm, 15.0, $grosorCm));
+): Book {
+    return new Book($isbn, 'Cien años de soledad', 'Gabriel García Márquez', 'Sudamericana', 1967, $genre, new Dimensions($heightCm, 15.0, $thicknessCm));
 }
 
-function ejemplar(string $codigo = 'EJ-0001', ?Libro $libro = null): Ejemplar
+function makeCopy(string $code = 'EJ-0001', ?Book $book = null): Copy
 {
-    return ($libro ?? libro())->agregarEjemplar($codigo);
+    return ($book ?? book())->addCopy($code);
 }
 
-function fecha(string $fecha): DateTimeImmutable
+function day(string $date): DateTimeImmutable
 {
-    return new DateTimeImmutable($fecha);
+    return new DateTimeImmutable($date);
 }

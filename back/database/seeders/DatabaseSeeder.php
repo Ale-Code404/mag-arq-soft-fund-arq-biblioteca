@@ -9,10 +9,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            BibliotecaSeeder::class,
-            ConfiguracionSeeder::class,
+            LibrarySeeder::class,
+            SettingsSeeder::class,
             RolesSeeder::class,
-            UsuariosSeeder::class,
+            UsersSeeder::class,
         ]);
 
         if (app()->environment('local')) {
