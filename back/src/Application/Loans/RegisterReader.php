@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Application\Loans;
 
-use App\Application\Loans\Dto\ReaderOutput;
-use App\Application\Loans\Dto\RegisterReaderInput;
 use App\Domain\Exceptions\BusinessRuleException;
 use App\Domain\People\Reader;
 use App\Domain\Repositories\ReaderRepository;
+
+use App\Application\Loans\Dto\{
+    ReaderOutput,
+    RegisterReaderInput
+};
 
 /** CU-06 Register a reader. */
 final class RegisterReader
@@ -20,6 +23,7 @@ final class RegisterReader
         if ($this->readers->existsByIdentification($e->identification)) {
             throw new BusinessRuleException('RF-06', 'Ya existe un lector con esa identificación.');
         }
+
         $reader = new Reader($e->identification, $e->name, $e->address);
         $this->readers->save($reader);
 

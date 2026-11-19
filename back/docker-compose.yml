@@ -25,6 +25,7 @@ services:
     environment:
       POSTGRES_USER: biblioteca
       POSTGRES_PASSWORD: biblioteca
+      POSTGRES_DB: biblioteca
     ports:
       - "${DB_PUERTO_HOST:-5433}:5432"
     volumes:
